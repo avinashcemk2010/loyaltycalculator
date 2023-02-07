@@ -46,14 +46,17 @@ public class CustomerService{
 
 		Date backdate = calculateBackDate();
 
+		//fetch the customer from H2 database
 		Optional<CustomerDetails> customerDetails = customerRepository.findById(id);
 		if(customerDetails.isPresent()) {
-
+			//fetch all transactions done by a customer 
 			List<Transactions> transactions = customerDetails.get().getTransactions();
 			if(transactions.size() > 0) {
 				List<Transactions> validtransactions = filterByBackDate(transactions, backdate);
 
 				Map<Integer, List<Transactions>> map = new HashMap<Integer, List<Transactions>>();
+				
+				//Group by all transactions based on month, so we can calculate reward for a specific month
 				validtransactions.forEach(trans -> {
 					int month = trans.getTransactiondate().getMonth()+1;
 					if(map.keySet().contains(month)) {
@@ -72,6 +75,7 @@ public class CustomerService{
 		return new HashMap<String, Float>();
 	}
 
+	//Remove all transactions that is older than 3 month
 	private List<Transactions> filterByBackDate(List<Transactions> transactions, Date backdate) {
 
 		return transactions.stream()
@@ -79,6 +83,7 @@ public class CustomerService{
 				.collect(Collectors.toList());
 	}
 
+	//calculate the date exactly 3 month back as we need to evaluate transaction for just last 3 months
 	public Date calculateBackDate() {
 		LocalDateTime localDateTime = LocalDateTime.now();
 		localDateTime = localDateTime.minusMonths(traceMonth);
@@ -86,6 +91,7 @@ public class CustomerService{
 
 	}
 
+	//calculate reward for a different months and total reward
 	public Map<String, Float> calculate(Map<Integer, List<Transactions>> trans) {
 
 		Map<String, Float> points = new HashMap<String, Float>();
